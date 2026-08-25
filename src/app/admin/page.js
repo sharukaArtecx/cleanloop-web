@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 
@@ -69,6 +70,27 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-8">
+      {/* --- Quick links -----------------------------------------------
+          Added so /admin/resources is reachable without waiting on a
+          Navbar edit. Safe to remove this section once "Resources" is
+          wired into the shared nav instead — it's just a card, no state
+          or logic tied to it. */}
+      <section>
+        <div className="card flex items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-base font-semibold text-loop-950">
+              Resource manager
+            </h2>
+            <p className="text-sm text-loop-700">
+              Track bins, trucks, and PPE — status, condition, and zone assignment.
+            </p>
+          </div>
+          <Link href="/admin/resources" className="btn-primary shrink-0">
+            Open
+          </Link>
+        </div>
+      </section>
+
       <section>
         <h2 className="font-display text-base font-semibold text-loop-950 mb-3">
           Complaint queue ({open.length} open)
