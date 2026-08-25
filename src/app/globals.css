@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Visible keyboard focus everywhere — cheap to add, easy to forget. */
+  :focus-visible {
+    outline: 2px solid theme("colors.amber.500");
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Respect reduced-motion: kill the loop-travel + fade-up animations for
+     anyone who has asked their OS to minimize motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* --- Buttons -------------------------------------------------------- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-[3px]
+      bg-amber-500 px-5 py-2.5 text-sm font-semibold text-loop-900
+      transition-colors duration-150 hover:bg-amber-400
+      focus-visible:bg-amber-400;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-[3px]
+      border border-loop-300 bg-transparent px-5 py-2.5 text-sm font-semibold
+      text-loop-900 transition-colors duration-150 hover:border-loop-500
+      hover:bg-loop-50;
+  }
+
+  /* A variant of the buttons for use on the dark hero / footer surfaces,
+     where .btn-secondary's dark-on-dark text would disappear. */
+  .btn-secondary-on-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-[3px]
+      border border-white/20 bg-transparent px-5 py-2.5 text-sm font-semibold
+      text-loop-50 transition-colors duration-150 hover:border-white/40
+      hover:bg-white/5;
+  }
+
+  /* --- Surfaces --------------------------------------------------------- */
+  .card {
+    @apply rounded-[3px] border border-loop-200 bg-loop-50 p-6 shadow-card;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1
+      font-mono text-[11px] uppercase tracking-[0.14em];
+  }
+
+  /* Small mono "manifest" label — used for route codes / eyebrows on dark bg */
+  .manifest-label {
+    @apply font-mono text-[11px] uppercase tracking-[0.22em] text-loop-400;
+  }
+}
+
+@layer utilities {
+  /* Subtle film-grain overlay for the hero — this is most of what makes the
+     flat gradient read as "cinematic" instead of just a dark rectangle.
+     Implemented as a tiled SVG turbulence filter so it costs no image request. */
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
