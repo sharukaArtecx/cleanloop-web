@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Navbar({ user, title }) {
@@ -19,9 +20,11 @@ export default function Navbar({ user, title }) {
       </div>
       <div className="flex items-center gap-4">
         {user && (
-          <span className="text-sm text-loop-700">
+          // The name/role chip now doubles as the entry point into account
+          // settings — no extra nav item needed, one obvious click target.
+          <Link href="/profile" className="text-sm text-loop-700 hover:underline">
             {user.name} &middot; <span className="capitalize">{user.role}</span>
-          </span>
+          </Link>
         )}
         <button onClick={handleLogout} className="btn-secondary">
           Log out

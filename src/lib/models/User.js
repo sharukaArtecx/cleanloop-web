@@ -16,6 +16,10 @@ const UserSchema = new mongoose.Schema(
     role: { type: String, enum: ROLES, required: true, default: "resident" },
     // Resident-only: which ward/zone they belong to, used to scope schedules.
     zone: { type: String, trim: true, default: null },
+    // Set by PATCH /api/auth/password whenever the password changes. `null`
+    // means "never changed since registration" — this is display-only info
+    // for the profile page, it doesn't gate auth or invalidate sessions.
+    passwordChangedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -27,6 +31,8 @@ UserSchema.methods.toSafeJSON = function toSafeJSON() {
     email: this.email,
     role: this.role,
     zone: this.zone,
+    passwordChangedAt: this.passwordChangedAt,
+    createdAt: this.createdAt,
   };
 };
 
