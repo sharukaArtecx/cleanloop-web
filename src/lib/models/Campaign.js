@@ -8,6 +8,12 @@ const CampaignSchema = new mongoose.Schema(
     date: { type: Date, required: true },
     organizer: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     volunteerCount: { type: Number, default: 0, min: 0 },
+    attendees: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        rsvpedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
