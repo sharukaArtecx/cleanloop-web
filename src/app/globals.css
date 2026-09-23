@@ -69,6 +69,18 @@
   .manifest-label {
     @apply font-mono text-[11px] uppercase tracking-[0.22em] text-loop-400;
   }
+
+  /* --- Form Inputs ------------------------------------------------------ */
+  .field-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-loop-700;
+  }
+
+  .field-input {
+    @apply w-full rounded-[3px] border border-loop-300 bg-white px-3.5 py-2.5
+      text-sm text-loop-900 placeholder-loop-400 shadow-sm transition-colors
+      duration-150 hover:border-loop-400 focus:border-amber-500
+      focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:bg-loop-100;
+  }
 }
 
 @layer utilities {

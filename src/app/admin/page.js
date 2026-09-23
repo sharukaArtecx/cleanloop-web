@@ -23,6 +23,11 @@ const DAYS = [
 
 export default function AdminPage() {
   const [complaints, setComplaints] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [scheduleForm, setScheduleForm] = useState({
     zone: "",
     dayOfWeek: "Monday",
@@ -36,15 +41,26 @@ export default function AdminPage() {
     setComplaints(data.complaints || []);
   }
 
+  async function loadEmployees() {
+    try {
+      const res = await fetch("/api/admin/employees");
+      const data = await res.json();
+      setEmployees(data.employees || []);
+    } catch (e) {
+      console.error("Failed to load employees", e);
+    }
+  }
+
   useEffect(() => {
     loadComplaints();
+    loadEmployees();
   }, []);
 
-  async function updateStatus(id, status) {
+  async function updateComplaint(id, updates) {
     await fetch(`/api/complaints/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(updates),
     });
     loadComplaints();
   }
@@ -66,15 +82,25 @@ export default function AdminPage() {
     }
   }
 
-  const open = complaints.filter((c) => c.status !== "resolved");
+  const openCount = complaints.filter((c) => c.status !== "resolved").length;
+
+  const filteredComplaints = complaints.filter((c) => {
+    if (statusFilter !== "all" && c.status !== statusFilter) return false;
+    if (typeFilter !== "all" && c.type !== typeFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const descMatch = c.description?.toLowerCase().includes(q);
+      const zoneMatch = c.zone?.toLowerCase().includes(q);
+      const reporterMatch = c.reportedBy?.name?.toLowerCase().includes(q);
+      const assigneeMatch = c.assignedTo?.name?.toLowerCase().includes(q);
+      if (!descMatch && !zoneMatch && !reporterMatch && !assigneeMatch) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-8">
-      {/* --- Quick links -----------------------------------------------
-          Added so /admin/resources is reachable without waiting on a
-          Navbar edit. Safe to remove this section once "Resources" is
-          wired into the shared nav instead — it's just a card, no state
-          or logic tied to it. */}
+      {/* --- Quick links --- */}
       <section>
         <div className="card flex items-center justify-between gap-4">
           <div>
@@ -91,44 +117,141 @@ export default function AdminPage() {
         </div>
       </section>
 
+      {/* --- Complaint Queue --- */}
       <section>
-        <h2 className="font-display text-base font-semibold text-loop-950 mb-3">
-          Complaint queue ({open.length} open)
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-loop-950">
+              Complaint Queue ({openCount} open)
+            </h2>
+            <p className="text-xs text-loop-500">
+              Review, assign workers, and update resolution statuses across wards.
+            </p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="card mb-4 p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Search complaints by description, zone, reporter, or worker..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="field-input text-xs py-2"
+            />
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="field-input text-xs py-2 w-32"
+            >
+              <option value="all">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="field-input text-xs py-2 w-36"
+            >
+              <option value="all">All Types</option>
+              <option value="missed_collection">Missed collection</option>
+              <option value="illegal_dumping">Illegal dumping</option>
+              <option value="hazard">Hazard</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Complaints list */}
         <div className="space-y-3">
-          {complaints.map((c) => (
-            <div key={c._id} className="card">
+          {filteredComplaints.map((c) => (
+            <div key={c._id} className="card space-y-3">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-loop-900">
-                    {TYPE_LABELS[c.type]}{" "}
-                    <span className="text-xs font-normal text-loop-500">
-                      &middot; from {c.source} &middot; {c.reportedBy?.name || "unknown"}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-loop-900">
+                      {TYPE_LABELS[c.type] || c.type}
                     </span>
-                  </p>
-                  <p className="text-sm text-loop-700">{c.description}</p>
-                  {c.zone && (
-                    <p className="mt-1 text-xs text-loop-500">Zone: {c.zone}</p>
-                  )}
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-loop-100 text-loop-700 capitalize">
+                      {c.source} report
+                    </span>
+                    {c.zone && (
+                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-900">
+                        Zone: {c.zone}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-loop-800">{c.description}</p>
+
+                  <div className="text-xs text-loop-500 flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                    <span>
+                      Reported by: <strong>{c.reportedBy?.name || "Unknown"}</strong> ({c.reportedBy?.role || "user"})
+                    </span>
+                    <span>&middot;</span>
+                    <span>{new Date(c.createdAt).toLocaleString()}</span>
+                    {c.resolvedAt && (
+                      <>
+                        <span>&middot;</span>
+                        <span className="text-loop-700">
+                          Resolved: {new Date(c.resolvedAt).toLocaleString()}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
+
                 <StatusBadge status={c.status} />
               </div>
-              <div className="mt-3 flex gap-2">
-                {["open", "in_progress", "resolved"].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => updateStatus(c._id, s)}
-                    disabled={c.status === s}
-                    className="btn-secondary text-xs py-1 px-3 disabled:opacity-40"
+
+              <div className="pt-2 border-t border-loop-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Worker Assignment */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-loop-700 whitespace-nowrap">
+                    Assigned Worker:
+                  </span>
+                  <select
+                    value={c.assignedTo?._id || ""}
+                    onChange={(e) =>
+                      updateComplaint(c._id, { assignedTo: e.target.value || null })
+                    }
+                    className="field-input text-xs py-1 px-2.5 max-w-[200px]"
                   >
-                    Mark {s.replace("_", " ")}
-                  </button>
-                ))}
+                    <option value="">-- Unassigned --</option>
+                    {employees.map((emp) => (
+                      <option key={emp._id} value={emp._id}>
+                        {emp.name} ({emp.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status Toggle Buttons */}
+                <div className="flex items-center gap-1.5">
+                  {["open", "in_progress", "resolved"].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => updateComplaint(c._id, { status: s })}
+                      disabled={c.status === s}
+                      className="btn-secondary text-xs py-1 px-2.5 disabled:opacity-40"
+                    >
+                      {s === "open" ? "Open" : s === "in_progress" ? "In Progress" : "Resolve"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
-          {complaints.length === 0 && (
-            <p className="card text-sm text-loop-700">No complaints yet.</p>
+
+          {filteredComplaints.length === 0 && (
+            <p className="card text-sm text-loop-700 text-center py-8">
+              No complaints match the selected filters.
+            </p>
           )}
         </div>
       </section>

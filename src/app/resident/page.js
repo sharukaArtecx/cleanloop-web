@@ -14,19 +14,27 @@ const TYPE_LABELS = {
 export default function ResidentPage() {
   const [schedules, setSchedules] = useState([]);
   const [complaints, setComplaints] = useState([]);
-  const [form, setForm] = useState({ type: "missed_collection", description: "" });
+  const [form, setForm] = useState({
+    type: "missed_collection",
+    description: "",
+    zone: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   async function loadData() {
-    const [scheduleRes, complaintRes] = await Promise.all([
-      fetch("/api/schedules"),
-      fetch("/api/complaints"),
-    ]);
-    const scheduleData = await scheduleRes.json();
-    const complaintData = await complaintRes.json();
-    setSchedules(scheduleData.schedules || []);
-    setComplaints(complaintData.complaints || []);
+    try {
+      const [scheduleRes, complaintRes] = await Promise.all([
+        fetch("/api/schedules"),
+        fetch("/api/complaints"),
+      ]);
+      const scheduleData = await scheduleRes.json();
+      const complaintData = await complaintRes.json();
+      setSchedules(scheduleData.schedules || []);
+      setComplaints(complaintData.complaints || []);
+    } catch (e) {
+      console.error("Failed to load resident data:", e);
+    }
   }
 
   useEffect(() => {
@@ -40,7 +48,11 @@ export default function ResidentPage() {
     const res = await fetch("/api/complaints", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        type: form.type,
+        description: form.description,
+        zone: form.zone.trim() || null,
+      }),
     });
     const data = await res.json();
     setSubmitting(false);
@@ -48,7 +60,7 @@ export default function ResidentPage() {
       setError(data.error || "Could not submit report");
       return;
     }
-    setForm({ type: "missed_collection", description: "" });
+    setForm({ type: "missed_collection", description: "", zone: "" });
     loadData();
   }
 
@@ -96,6 +108,21 @@ export default function ResidentPage() {
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="field-label" htmlFor="zone">
+              Zone / Ward location (optional)
+            </label>
+            <input
+              id="zone"
+              type="text"
+              placeholder="e.g. Zone 4 — Maple Street"
+              className="field-input"
+              value={form.zone}
+              onChange={(e) => setForm((f) => ({ ...f, zone: e.target.value }))}
+            />
+          </div>
+
           <div>
             <label className="field-label" htmlFor="description">
               Details
@@ -110,7 +137,8 @@ export default function ResidentPage() {
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             />
           </div>
-          {error && <p className="text-sm text-clay-600">{error}</p>}
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button type="submit" disabled={submitting} className="btn-primary">
             {submitting ? "Submitting..." : "Submit report"}
           </button>
@@ -130,10 +158,17 @@ export default function ResidentPage() {
           {complaints.slice(0, 3).map((c) => (
             <div key={c._id} className="card flex items-start justify-between">
               <div>
-                <p className="text-sm font-medium text-loop-900">
-                  {TYPE_LABELS[c.type]}
-                </p>
-                <p className="text-sm text-loop-700">{c.description}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-loop-900">
+                    {TYPE_LABELS[c.type]}
+                  </p>
+                  {c.zone && (
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-900">
+                      Zone: {c.zone}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-loop-700 mt-1">{c.description}</p>
               </div>
               <StatusBadge status={c.status} />
             </div>

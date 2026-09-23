@@ -28,11 +28,26 @@ export default function ResidentComplaintsPage() {
         {complaints.map((c) => (
           <div key={c._id} className="card flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-loop-900">{TYPE_LABELS[c.type]}</p>
-              <p className="text-sm text-loop-700">{c.description}</p>
-              <p className="mt-1 text-xs text-loop-500">
-                {new Date(c.createdAt).toLocaleDateString()}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-medium text-loop-900">
+                  {TYPE_LABELS[c.type] || c.type}
+                </p>
+                {c.zone && (
+                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-500/15 text-amber-900">
+                    Zone: {c.zone}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-loop-700 mt-1">{c.description}</p>
+              <div className="mt-1.5 text-xs text-loop-500 flex items-center gap-2">
+                <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                {c.assignedTo?.name && (
+                  <>
+                    <span>&middot;</span>
+                    <span className="text-loop-700">Assigned worker: <strong>{c.assignedTo.name}</strong></span>
+                  </>
+                )}
+              </div>
             </div>
             <StatusBadge status={c.status} />
           </div>

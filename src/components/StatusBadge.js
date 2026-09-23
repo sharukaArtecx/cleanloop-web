@@ -1,7 +1,7 @@
 const STYLES = {
-  open: "bg-clay-500/15 text-clay-600",
-  in_progress: "bg-loop-100 text-loop-700",
-  resolved: "bg-loop-700/15 text-loop-700",
+  open: "bg-amber-500/15 text-amber-800 border border-amber-500/30",
+  in_progress: "bg-blue-500/15 text-blue-800 border border-blue-500/30",
+  resolved: "bg-loop-700/15 text-loop-700 border border-loop-700/30",
 };
 
 const LABELS = {
